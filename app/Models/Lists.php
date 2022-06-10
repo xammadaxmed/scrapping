@@ -63,14 +63,15 @@ class Lists extends Model
 
     public function getColumns($id)
     {
-        $arr = $this->query("
-        SELECT 
+        $db = db_connect();
+        $arr = $db->query( "SELECT 
         list_template_details.column_name
         FROM lists LEFT OUTER JOIN list_template_details 
-        ON list_template_details.template_id = lists.list_template_id WHERE lists.id='$id'
-        ");
+        ON list_template_details.template_id = lists.list_template_id WHERE lists.id='$id'")
+        ->getResult();
         $arrReturn = [];
         $arrReturn[] = 'id';
+      
         foreach ($arr as $ar) {
             $arrReturn[] = $ar->column_name;
         }
@@ -82,7 +83,8 @@ class Lists extends Model
 
     public function getTableName($id)
     {
-        $arr = $this->query("SELECT list_templates.name FROM list_templates LEFT OUTER JOIN lists ON lists.list_template_id = list_templates.id WHERE lists.id='$id'");
+        $db = db_connect();
+        $arr = $db->query("SELECT list_templates.name FROM list_templates LEFT OUTER JOIN lists ON lists.list_template_id = list_templates.id WHERE lists.id='$id'")->getResult();
         return strtolower(str_replace(' ', '_', $arr[0]->name));
     }
 
@@ -96,7 +98,9 @@ class Lists extends Model
 
     public function getDomainColumn($nListId)
     {
-        $arr = $this->query("SELECT list_templates.domain_column FROM list_templates LEFT OUTER JOIN lists ON lists.list_template_id = list_templates.id WHERE lists.id='$nListId'");
+        $con = db_connect();
+        $arr = $con->query("SELECT list_templates.domain_column FROM list_templates LEFT OUTER JOIN lists ON lists.list_template_id = list_templates.id WHERE lists.id='$nListId'")
+        ->getResult();
         return $arr[0]->domain_column;
     }
 }

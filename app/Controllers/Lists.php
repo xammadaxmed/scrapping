@@ -8,6 +8,7 @@ use App\Helpers\DateTime;
 use App\Helpers\ExcelHelper;
 use App\Helpers\ExportHelper;
 use App\Helpers\TableHelper;
+use App\Libraries\DeBounce\Bouncer;
 use App\Libraries\Kendo\Scrapper as KendoScrapper;
 use Exception;
 use Hermawan\DataTables\DataTable;
@@ -73,8 +74,7 @@ class Lists extends BaseController
         $data = [];
         $columns = $this->db->Lists->getColumns($id);
         $columns = $this->mergeHeaders($id, $columns);
-        // dd($columns);
-        // die;
+        $arrContactColumns = $this->db->ListTemplates->addContactsColumns();
         $data['columns'] = $columns;
         $data['id'] = $id;
         $data['domain_column'] = $this->db->Lists->getDomainColumn($id);
@@ -82,7 +82,21 @@ class Lists extends BaseController
         $builder = db_connect()->table($this->db->Lists->getTableName($id));
         $result = $builder->select('id')->where('list_id', $id)->get()->getResult();
         $data['totalRows'] = count($result);
+        $data['contactsColumns'] = $arrContactColumns;
+        $data['emailColumns'] = $this->extractEmailColumns(array_merge($columns,$arrContactColumns));
         return view('lists/details', $data);
+    }
+
+    public function extractEmailColumns($columns)
+    {
+        $columns = array_unique($columns);
+        $arrMailColumns = [];
+        foreach($columns as $col)
+        {
+            if(strpos($col,"mail")!==false)
+                $arrMailColumns[] = $col;
+        }
+        return $arrMailColumns;
     }
 
     public function mergeHeaders($listId, $columns)
@@ -125,12 +139,12 @@ class Lists extends BaseController
     {
         $db = db_connect();
         $id = $this->request->getGet('id');
-        $listMeta = $this->db->query("SELECT 
+        $listMeta = $db->query("SELECT 
         lists.id,
         lists.name,
         list_templates.name as template_name,
         list_templates.id as template_id
-        FROM lists LEFT OUTER JOIN list_templates on list_templates.id = lists.list_template_id WHERE lists.id='$id' ");
+        FROM lists LEFT OUTER JOIN list_templates on list_templates.id = lists.list_template_id WHERE lists.id='$id' ")->getResult();
         $strTable = str_replace(' ', '_', strtolower($listMeta[0]->template_name));
         $arrColumns = $this->db->Lists->getColumns($id);
         $arrColumns = $this->mergeColumns($id, $arrColumns);
@@ -146,13 +160,7 @@ class Lists extends BaseController
                 $string = $row[$col];
                 $strInput = "";
                 if ($count == 1) {
-                    $strIcon = "";
-                    $contacts = $this->getContacts($row[$domainColumn]);
-                    if (!empty($contacts)) {
-                        $strIcon = "<i class='fa fa-user text-danger' style='margin-left:2px;'></i>";
-                    }
-
-                    $strInput .= "<div style='width:200px;'><input style='display:inline-block;' class='table-input' readonly value='$string'/>$strIcon</div>";
+                    $strInput .= "<div style='width:200px;'><input style='display:inline-block;' class='table-input' readonly value='$string'/></div>";
                 } else {
                     $strInput .= "<input class='table-input' readonly value='$string'/>";
                 }
@@ -202,24 +210,25 @@ class Lists extends BaseController
         $txtKeyWords = $this->request->getPost('txtKeyWords');
         $strTable = $this->db->Lists->getTableName($listId);
         $domainColumn = $this->db->Lists->getDomainColumn($listId);
-        $arrData = $db->table($strTable)->select($domainColumn)->where('list_id', $listId)->orderBy('id', 'ASC')->get()->getResultObject();
+        $arrData = $db->table($strTable)->select("id,$domainColumn")->where('list_id', $listId)->orderBy('id', 'ASC')->get()->getResultObject();
+       
         foreach ($arrData as $data) {
             try {
                 $data = (array)$data;
-                $arrContacts = (array) KendoScrapper::init()->search($data[$domainColumn])->contacts($category, null, $txtMaxMails)->all();
+                $arrContacts = (array) KendoScrapper::init()->search($data[$domainColumn])->contacts($category, null, 5)->all();
+                $count = 1;
                 foreach ($arrContacts as $contact) {
                     $contact = (array)$contact;
-                    $contact['domain'] = $data[$domainColumn];
-                    $arrContacts = $db->table('contacts')
-                        ->where('firstname', $contact['firstname'])
-                        ->where('lastname', $contact['lastname'])
-                        ->where('linkedin', $contact['linkedin'])
-                        ->where('domain', $contact['domain'])
-                        ->get()->getResult();
-                    if (empty($arrContacts)) {
-                        $contact['list_id'] = $listId;
-                        $db->table('contacts')->insert($contact);
+                    $dbContact = [];
+
+                    foreach($contact as $key=>$cnt)
+                    {
+                        $newColumn = $key."_".$count;
+                        $dbContact[$newColumn] = $cnt;
                     }
+
+                    $db->table($strTable)->where('id',$data['id'])->update($dbContact);
+                    $count++;
                 }
             } catch (Exception $ex) {
             }
@@ -240,9 +249,12 @@ class Lists extends BaseController
                 $domain = $data[$domainColumn];
                 $arr = Convert::intArrtoString($arr);
                 $up = $db->table($strTable)->like('website', $domain)->update($arr);
+                dd($up);die;
             } catch (Exception $ex) {
             }
+            die;
         }
+        die;
     }
 
     public function addNewColumns($strTable, $payload, $listId)
@@ -279,15 +291,11 @@ class Lists extends BaseController
             $data = $result;
             $columns = $post['ddColumns'];
         } else {
-            $result = $db->table('contacts')->select('domain,firstname,lastname,personal_email,work_email,title,category')->where('list_id', $post['txtId'])->get()->getResult('array');
-            if (!empty($result)) {
-                $columns = array_keys($result[0]);
-
-                foreach ($result as $res) {
-                    $res['domain'] = Convert::urlToDomain($res['domain']);
-                    $data[] = $res;
-                }
-            }
+            $strTable = $this->db->Lists->getTableName($post['txtId']);
+            $strColumns = implode(",", $post['ddContactsColumns']);
+            $result = $db->table($strTable)->select($strColumns)->offset($post['txtFrom'])->limit($post['txtTo'])->get()->getResult('array');
+            $data = $result;
+            $columns = $post['ddContactsColumns'];
 
             $filename .= "-Contacts";
         }
@@ -328,6 +336,31 @@ class Lists extends BaseController
         $db->table('lists')->where('id', $id)->delete();
         $db->table($tableName)->where('list_id', $id)->delete();
         return $this->success("List Has been delete successfully");
+    }
+
+    public function verify_emails()
+    {
+        $emails = $this->request->getPost('ddEmailColumns');
+        $emails[] = "id";
+        $strEmails = implode(",",$emails);
+        $txtId = $this->request->getPost('txtId');
+        $db = db_connect();
+        $data = $db->table($this->db->Lists->getTableName($txtId))->select($strEmails)->where('list_id',$txtId)->get()->getResult();
+        $bouncer = Bouncer::create();
+        foreach($data as $dt)
+        {
+            foreach($dt as $key=>$value)
+            {
+                if(!empty($value) && $key!='id')
+                {
+                    //need to work
+                    $result = $bouncer->verify($value);
+                    dd($result);
+                    die;
+                }
+                
+            }
+        }
     }
 
     public function test_api()

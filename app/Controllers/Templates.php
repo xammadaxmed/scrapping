@@ -14,7 +14,7 @@ class Templates extends BaseController
     public function index()
     {
         return view('templates/index');
-    }
+    } 
 
     public function save()
     {
@@ -30,6 +30,8 @@ class Templates extends BaseController
         $fileName = $file->getTempName();
         $excelHelper = new ExcelHelper($fileName);
         $columns = $excelHelper->headings();
+        $contactColumns = $this->db->ListTemplates->addContactsColumns();
+        $columns = array_merge($columns,$contactColumns);
         $columns = array_unique($columns);
 
         foreach ($columns as $col) {
@@ -77,6 +79,7 @@ class Templates extends BaseController
 
     public function remove()
     {
+        $db = db_connect();
         try {
             $id = $this->request->getGet('id');
 
@@ -88,8 +91,8 @@ class Templates extends BaseController
             }
             $data = $this->db->ListTemplates->where('id', $id)->first();
             $strTableName = strtolower(str_replace(' ', '_', $data['name']));
-            $data = $this->db->query("DELETE FROM list_templates WHERE id='$id'");
-            $data = $this->db->query("DELETE FROM list_template_details WHERE template_id = '$id'");
+            $data = $db->query("DELETE FROM list_templates WHERE id='$id'");
+            $data = $db->query("DELETE FROM list_template_details WHERE template_id = '$id'");
             TableHelper::dropTable($strTableName);
             return $this->success("List Template has been deleted!");
         } catch (Exception $ex) {

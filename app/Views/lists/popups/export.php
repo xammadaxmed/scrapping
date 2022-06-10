@@ -1,8 +1,14 @@
+
+
 <style>
     .radio-label {
         display: inline-block;
         margin-right: 50px;
         ;
+    }
+
+    #contacstContainer{
+        display: none;
     }
 </style>
 
@@ -44,7 +50,7 @@
                             <div class="form-check">
 
                                 <label for="rbOther" class="radio-label">
-                                    <input class="form-check-input rb-type" type="radio" name="rbType" id="rbOther" checked value="OTHER" /> Other
+                                    <input class="form-check-input rb-type" type="radio" name="rbType" id="rbOther" checked value="OTHER" /> All
                                 </label>
                                 <br>
                                 <label for="rbContacts" class="radio-label">
@@ -58,7 +64,7 @@
                         </div>
 
 
-                        <div class="form-group col-sm-12" id="columnsButtons">
+                        <div class="form-group col-sm-12" >
                             <div class="row">
                                 <div class="col-sm-6 text-center">
                                     <a class="btn btn-info btn-sm btn-select-all">Select All</a>
@@ -85,6 +91,24 @@
                                 overflow-y: auto;
                             }
                         </style>
+
+                    <div class="form-group col-sm-12" id="contacstContainer">
+                            <label for="ddContactsColumns">Columns</label>
+                            <select name="ddContactsColumns[]" id="ddContactsColumns" class="form-control" multiple style="height: 200px;">
+                                <?php
+
+                                
+                                foreach ($contactsColumns as $column) {
+                                    if ($column == 'id' || $column == 'status') {
+                                        continue;
+                                    }
+                                    echo "<option selected value='$column'>$column</option>";
+                                }
+                                ?>
+
+                            </select>
+                            <hr>
+                        </div>
 
 
                         <div class="form-group col-sm-12" id="columnsContainer">
@@ -137,10 +161,10 @@
     $(document).on('click', '.rb-type', function() {
         if ($(this).val() == 'CONTACTS') {
             $('#columnsContainer').hide();
-            $('#columnsButtons').hide();
+            $('#contacstContainer').show();
         } else {
             $('#columnsContainer').show();
-            $('#columnsButtons').show();
+            $('#contacstContainer').hide();
 
         }
     });

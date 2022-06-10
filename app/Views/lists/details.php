@@ -16,6 +16,7 @@
                 <a href="#" class="btn btn-success btn-sm btn-enrich"> <i class="fa fa-tasks"></i> Enrich</a>
                 <a href="#" class="btn btn-primary btn-sm btn-export"> <i class="fa fa-download"></i> Export</a>
                 <a href="#" class="btn btn-warning btn-sm btn-merge"> <i class="fa fa-list"></i> Merge</a>
+                <a href="#" class="btn btn-info btn-sm btn-verify"> <i class="fa fa-envelope"></i> Verify Emails</a>
             </div>
             <div class="card-body">
                 <h5 class="card-title">List Records</h5>
@@ -70,6 +71,7 @@
 <?= $this->include("lists/popups/export.php"); ?>
 <?= $this->include("lists/popups/contacts.php"); ?>
 <?= $this->include("lists/popups/merge.php"); ?>
+<?= $this->include("lists/popups/verify.php"); ?>
 
 
 
@@ -86,7 +88,7 @@ $strColumns = json_encode($arr);
 
 <script>
     $(document).ready(function() {
-        $('#ddColumns,#ddMergeColumns').select2({
+        $('#ddColumns,#ddMergeColumns,#ddContactsColumns,#ddEmailColumns').select2({
             'width': '100%'
         });
 
@@ -119,6 +121,13 @@ $strColumns = json_encode($arr);
         e.preventDefault();
         $('#modalMerge').modal('show');
     });
+
+
+    $(document).on('click', '.btn-verify', function(e) {
+        e.preventDefault();
+        $('#modalVerify').modal('show');
+    });
+
 
     $(document).on('click','#tblPersons tbody tr',function(e){
         e.preventDefault();

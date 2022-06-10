@@ -43,7 +43,8 @@ class ListTemplate extends Model
 
     public function getColumns($id)
     {
-        $arr = $this->query("SELECT column_name from list_template_details WHERE template_id = '$id'");
+        $db = db_connect();
+        $arr = $db->query("SELECT column_name from list_template_details WHERE template_id = '$id'")->getResult();
         $arrReturn = [];
         foreach($arr as $ar)
         {
@@ -51,5 +52,20 @@ class ListTemplate extends Model
         }
       
       return $arrReturn;
+    }
+
+    public function addContactsColumns($columns = 5)
+    {
+        $arrColumns = [];
+        $arrBase = ['firstname','lastname','personal_email','work_email','linkedin','category','title'];
+        for($i=1;$i<=$columns;$i++)
+        {
+            foreach($arrBase as $base)
+            {
+                $arrColumns[] = $base."_".$i;
+            }
+
+        }
+        return $arrColumns;
     }
 }
