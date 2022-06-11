@@ -83,7 +83,7 @@ class Lists extends BaseController
         $result = $builder->select('id')->where('list_id', $id)->get()->getResult();
         $data['totalRows'] = count($result);
         $data['contactsColumns'] = $arrContactColumns;
-        $data['emailColumns'] = $this->extractEmailColumns(array_merge($columns,$arrContactColumns));
+        $data['emailColumns'] = $this->extractEmailColumns(array_merge($columns, $arrContactColumns));
         return view('lists/details', $data);
     }
 
@@ -91,9 +91,8 @@ class Lists extends BaseController
     {
         $columns = array_unique($columns);
         $arrMailColumns = [];
-        foreach($columns as $col)
-        {
-            if(strpos($col,"mail")!==false)
+        foreach ($columns as $col) {
+            if (strpos($col, "mail") !== false)
                 $arrMailColumns[] = $col;
         }
         return $arrMailColumns;
@@ -211,7 +210,7 @@ class Lists extends BaseController
         $strTable = $this->db->Lists->getTableName($listId);
         $domainColumn = $this->db->Lists->getDomainColumn($listId);
         $arrData = $db->table($strTable)->select("id,$domainColumn")->where('list_id', $listId)->orderBy('id', 'ASC')->get()->getResultObject();
-       
+
         foreach ($arrData as $data) {
             try {
                 $data = (array)$data;
@@ -221,13 +220,12 @@ class Lists extends BaseController
                     $contact = (array)$contact;
                     $dbContact = [];
 
-                    foreach($contact as $key=>$cnt)
-                    {
-                        $newColumn = $key."_".$count;
+                    foreach ($contact as $key => $cnt) {
+                        $newColumn = $key . "_" . $count;
                         $dbContact[$newColumn] = $cnt;
                     }
 
-                    $db->table($strTable)->where('id',$data['id'])->update($dbContact);
+                    $db->table($strTable)->where('id', $data['id'])->update($dbContact);
                     $count++;
                 }
             } catch (Exception $ex) {
@@ -249,7 +247,8 @@ class Lists extends BaseController
                 $domain = $data[$domainColumn];
                 $arr = Convert::intArrtoString($arr);
                 $up = $db->table($strTable)->like('website', $domain)->update($arr);
-                dd($up);die;
+                dd($up);
+                die;
             } catch (Exception $ex) {
             }
             die;
@@ -342,32 +341,35 @@ class Lists extends BaseController
     {
         $emails = $this->request->getPost('ddEmailColumns');
         $emails[] = "id";
-        $strEmails = implode(",",$emails);
+        $strEmails = implode(",", $emails);
         $txtId = $this->request->getPost('txtId');
         $db = db_connect();
         $strTable = $this->db->Lists->getTableName($txtId);
         $data = $db->table($strTable)
-        ->select($strEmails)
-        ->where('list_id',$txtId)
-        ->get()
-        ->getResult();
-       
-        foreach($data as $dt)
-        {
-            if($this->isArrEmpty($dt))
-                continue;
-           
-                $arr = [];
-            foreach($dt as $key=>$value)
-            {
-                if($key == "id" || empty($value))
-                    continue;
-                $result =  Bouncer::create()->verify($value);
-                $arr[$key] = "$value ($result->result)";
+            ->select($strEmails)
+            ->where('list_id', $txtId)
+            ->get()
+            ->getResult();
 
+        foreach ($data as $dt) {
+            try {
+                if ($this->isArrEmpty($dt))
+                    continue;
+
+                $arr = [];
+                foreach ($dt as $key => $value) {
+                    if ($key == "id" || empty($value))
+                        continue;
+                    $result =  Bouncer::create()->verify($value);
+                    $arr[$key] = "$value ($result->result)";
+                }
+
+                $db->table($strTable)->where('id', $dt->id)->update($arr);
+            } catch (Exception $ex) {
+                // dd($ex);
             }
-             $db->table($strTable)->where('id',$dt->id)->update($arr);
         }
+
 
         return $this->success("Emails has been verified successfully");
     }
@@ -376,10 +378,8 @@ class Lists extends BaseController
     {
         $bEmpty = true;
 
-        foreach($arr as $key=>$value)
-        {
-            if(!empty($value) && $key!="id")
-            {
+        foreach ($arr as $key => $value) {
+            if (!empty($value) && $key != "id") {
                 $bEmpty = false;
             }
         }
@@ -389,6 +389,5 @@ class Lists extends BaseController
 
     public function test_api()
     {
-  
     }
 }

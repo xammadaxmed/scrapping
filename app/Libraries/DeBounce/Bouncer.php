@@ -32,7 +32,7 @@ class Bouncer
             $arrData = json_decode($response->getBody());
             return $arrData->debounce;
         } catch (Exception $ex) {
-            return "";
+            throw $ex;
         }
     }
 
