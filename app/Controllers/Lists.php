@@ -366,8 +366,6 @@ class Lists extends BaseController
                 $arr[$key] = "$value ($result->result)";
 
             }
-
-            dd($arr);
              $db->table($strTable)->where('id',$dt->id)->update($arr);
         }
 
