@@ -45,14 +45,14 @@
 
     $(document).on('submit', '#frmVerifyEmails', function(e) {
         e.preventDefault();
-        // $('#btnVerifySubmit').attr('disabled',true);
-        // $('#btnVerifySubmit').html('Processing <i class="fa fa-spinner fa-spin"></i>');
+        $('#btnVerifySubmit').attr('disabled',true);
+        $('#btnVerifySubmit').html('Processing <i class="fa fa-spinner fa-spin"></i>');
         var url = $(this).attr('action');
         $.post(url, $(this).serialize(), function(response, status) {
-            // $('#modalVerify').modal('hide');
+            $('#modalVerify').modal('hide');
             showMessage(response.status, response.message);
            setTimeout(()=>{
-            //    window.location.reload();
+               window.location.reload();
            },500);
         });
     });

@@ -345,25 +345,52 @@ class Lists extends BaseController
         $strEmails = implode(",",$emails);
         $txtId = $this->request->getPost('txtId');
         $db = db_connect();
-        $data = $db->table($this->db->Lists->getTableName($txtId))->select($strEmails)->where('list_id',$txtId)->get()->getResult();
-        $bouncer = Bouncer::create();
+        $strTable = $this->db->Lists->getTableName($txtId);
+        $data = $db->table($strTable)
+        ->select($strEmails)
+        ->where('list_id',$txtId)
+        ->get()
+        ->getResult();
+       
         foreach($data as $dt)
         {
+            if($this->isArrEmpty($dt))
+                continue;
+           
+                $arr = [];
             foreach($dt as $key=>$value)
             {
-                if(!empty($value) && $key!='id')
-                {
-                    //need to work
-                    $result = $bouncer->verify($value);
-                    dd($result);
-                    die;
-                }
-                
+                if($key == "id" || empty($value))
+                    continue;
+                $result =  Bouncer::create()->verify($value);
+                $arr[$key] = "$value ($result->result)";
+
+            }
+
+            dd($arr);
+             $db->table($strTable)->where('id',$dt->id)->update($arr);
+        }
+
+        return $this->success("Emails has been verified successfully");
+    }
+
+    public function isArrEmpty($arr)
+    {
+        $bEmpty = true;
+
+        foreach($arr as $key=>$value)
+        {
+            if(!empty($value) && $key!="id")
+            {
+                $bEmpty = false;
             }
         }
+
+        return $bEmpty;
     }
 
     public function test_api()
     {
+  
     }
 }

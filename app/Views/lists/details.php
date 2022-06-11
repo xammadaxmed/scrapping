@@ -129,19 +129,6 @@ $strColumns = json_encode($arr);
     });
 
 
-    $(document).on('click','#tblPersons tbody tr',function(e){
-        e.preventDefault();
-        var rowData = table.row( this ).data();
-        var site = $(rowData.<?=$domain_column?>).val();
-        var url = "<?=route('/lists/get_contacts?site=')?>"+site;
-        $.get(url,function(response,status){
-            var tbody = createTBody(response.data);
-            $('#tblContacts tbody').html(tbody);
-            $('#modalContacts').modal('show');
-        });
-
-    });
-
 
     function createTBody(data)
     {
