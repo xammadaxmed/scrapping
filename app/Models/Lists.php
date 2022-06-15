@@ -51,7 +51,7 @@ class Lists extends Model
 
         foreach($arrData as $key=>$data)
         {
-           $exist = $db->query("SELECT * FROM $strTable WHERE $domainColumn LIKE '{$data[$domainColumn]}'")->getRowArray();
+           $exist = $db->query("SELECT * FROM $strTable WHERE $domainColumn LIKE '{$data[$domainColumn]}' AND list_id='$id'")->getRowArray();
            if(empty($exist))
            {
               $data['list_id'] = $id;

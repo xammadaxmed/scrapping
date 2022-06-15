@@ -1,6 +1,7 @@
 <?php
 namespace App\Libraries\Kendo;
 use Exception;
+use GuzzleHttp\Client;
 
 class Search
 {
@@ -53,6 +54,31 @@ class Search
         $strUrl = "/companybydomain?". http_build_query($arrBody);
         $response = $this->postJson($strUrl);
         return $response;
+    }
+
+    public function async()
+    {
+
+        $arrBody = [
+            'apikey' => $this->config->apiKey,
+            'domain' => $this->domain
+        ];
+        $strUrl = "/companybydomain?". http_build_query($arrBody);
+       
+        
+        try {
+           $promise =  $this->scrapper->guzzle->requestAsync('GET',$strUrl,[
+                'headers' => [
+                    'Content-Type' => 'application/json'
+                ]
+                ])->then(function($response){
+                    echo($response->getBody());
+                });
+                return $promise;
+        } catch (Exception $ex) {
+           dd($ex->getMessage());
+        }
+
     }
 
 }

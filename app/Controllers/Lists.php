@@ -389,5 +389,15 @@ class Lists extends BaseController
 
     public function test_api()
     {
+        $domains = ['google.com','yahoo.com','youtube.com'];
+        $arr = [];
+        foreach($domains as $domain)
+        { 
+            $arr[] =  KendoScrapper::init()->search($domain)->company();
+
+        }
+
+       echo "Enriched\n";
+
     }
 }
