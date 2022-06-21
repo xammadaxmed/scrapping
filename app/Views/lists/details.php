@@ -17,6 +17,7 @@
                 <a href="#" class="btn btn-primary btn-sm btn-export"> <i class="fa fa-download"></i> Export</a>
                 <a href="#" class="btn btn-warning btn-sm btn-merge"> <i class="fa fa-list"></i> Merge</a>
                 <a href="#" class="btn btn-info btn-sm btn-verify"> <i class="fa fa-envelope"></i> Verify Emails</a>
+                <a href="#" class="btn btn-secondary btn-sm btn-upload"> <i class="fa fa-upload"></i> Upload More</a>
             </div>
             <div class="card-body">
                 <h5 class="card-title">List Records</h5>
@@ -72,6 +73,7 @@
 <?= $this->include("lists/popups/contacts.php"); ?>
 <?= $this->include("lists/popups/merge.php"); ?>
 <?= $this->include("lists/popups/verify.php"); ?>
+<?= $this->include("lists/popups/upload.php"); ?>
 
 
 
@@ -126,6 +128,12 @@ $strColumns = json_encode($arr);
     $(document).on('click', '.btn-verify', function(e) {
         e.preventDefault();
         $('#modalVerify').modal('show');
+    });
+
+    
+    $(document).on('click', '.btn-upload', function(e) {
+        e.preventDefault();
+        $('#mdlUploadMore').modal('show');
     });
 
 

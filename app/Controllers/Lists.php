@@ -229,6 +229,7 @@ class Lists extends BaseController
                     $count++;
                 }
             } catch (Exception $ex) {
+
             }
         }
     }
@@ -247,13 +248,9 @@ class Lists extends BaseController
                 $domain = $data[$domainColumn];
                 $arr = Convert::intArrtoString($arr);
                 $up = $db->table($strTable)->like('website', $domain)->update($arr);
-                dd($up);
-                die;
             } catch (Exception $ex) {
             }
-            die;
         }
-        die;
     }
 
     public function addNewColumns($strTable, $payload, $listId)
@@ -385,6 +382,31 @@ class Lists extends BaseController
         }
 
         return $bEmpty;
+    }
+
+    public function upload()
+    {
+        try {
+            $params = $this->request->getPost();
+            $arr = [];
+            $id = $params['txtId'];
+            $file = $this->request->getFile('fuUploadMore');
+            $fileName = $file->getTempName();
+            $excelHelper = ExcelHelper::create($fileName);
+            $body = $excelHelper->body();
+            $headers = $excelHelper->headings();
+            $db_columns =  $this->db->Lists->getColumns($id);
+            if($db_columns[0] == "id")
+            {
+                unset($db_columns[0]);
+            }
+            $templateName =  $this->db->Lists->getTemplateName($id);
+            $data = Convert::toMappedColumns($body, $db_columns);
+            $data = $this->db->Lists->saveListRecords($id, $templateName, $db_columns, $data);
+            return $this->success("List has been uploaded successfully", [$data]);
+        } catch (Exception $ex) {
+            return $this->error($ex->getMessage());
+        }
     }
 
     public function test_api()

@@ -114,9 +114,9 @@
         $.post(url, $(this).serialize(), function(response, status) {
             $('#modalEnrich').modal('hide');
             showMessage(response.status,response.message);
-            table.ajax.reload();
-            $('#btnEnrichSubmit').attr('disabled',false);
-            $('#btnEnrichSubmit').html('Enrich');
+            setTimeout(() => {
+                window.location.reload()
+            }, 500);
         });
     });
 </script>

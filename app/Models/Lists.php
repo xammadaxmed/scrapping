@@ -45,10 +45,8 @@ class Lists extends Model
     {
         $domainColumn = $this->getDomainColumn($id);
         $db = db_connect();
-
         $arrColumns[] = 'list_id';
         $strTable = strtolower(str_replace(' ', '_', $strListName));
-
         foreach($arrData as $key=>$data)
         {
            $exist = $db->query("SELECT * FROM $strTable WHERE $domainColumn LIKE '{$data[$domainColumn]}' AND list_id='$id'")->getRowArray();
@@ -102,5 +100,14 @@ class Lists extends Model
         $arr = $con->query("SELECT list_templates.domain_column FROM list_templates LEFT OUTER JOIN lists ON lists.list_template_id = list_templates.id WHERE lists.id='$nListId'")
         ->getResult();
         return $arr[0]->domain_column;
+    }
+
+    public function getTemplateName($id)
+    {
+        $strQuery = "SELECT list_templates.name FROM list_templates 
+        LEFT OUTER JOIN lists ON lists.list_template_id = list_templates.id
+        WHERE lists.id = '$id'";
+        $con = db_connect();
+        return  $con->query($strQuery)->getRowObject()->name;
     }
 }

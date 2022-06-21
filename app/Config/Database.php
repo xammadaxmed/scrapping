@@ -32,7 +32,7 @@ class Database extends Config
      */
     public $default = [
         'DSN'      => '',
-        'hostname' => 'DESKTOP-96GKVM8',
+        'hostname' => 'DESKTOP-NOTCLAC',
         'username' => '',
         'password' => '',
         'database' => 'scrapping',
