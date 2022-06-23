@@ -15,7 +15,7 @@ class Lists extends Model
     protected $returnType       = 'array';
     protected $useSoftDeletes   = false;
     protected $protectFields    = true;
-    protected $allowedFields    = ['id', 'name', 'list_template_id','created_at','updated_at'];
+    protected $allowedFields    = ['id', 'name', 'list_template_id', 'created_at', 'updated_at'];
 
     // Dates
     protected $useTimestamps = false;
@@ -41,20 +41,37 @@ class Lists extends Model
     protected $beforeDelete   = [];
     protected $afterDelete    = [];
 
+    public function addNormalizedDomains($arrData,$domainColumn)
+    {
+        $arrReturn = [];
+        foreach ($arrData as $data) {
+            $arrDomain  = parse_url($data[$domainColumn]);
+            $strDomain1 = "";
+            if(isset($arrDomain['host']))
+            $strDomain1 = $arrDomain['host'];
+            else
+            $strDomain1 = $arrDomain['path'];
+            $strDomain1 = str_replace(["https://","http://","www."],"",$strDomain1);
+            $data['normalized_domain'] =  $strDomain1;
+            $data['normalized_domain1'] = "https://www.".$strDomain1;
+            $arrReturn[] = $data;
+        }
+        return $arrReturn;
+    }
+
     public function saveListRecords($id, $strListName, $arrColumns, $arrData)
     {
         $domainColumn = $this->getDomainColumn($id);
         $db = db_connect();
+        $arrData =$this->addNormalizedDomains($arrData,$domainColumn);
         $arrColumns[] = 'list_id';
         $strTable = strtolower(str_replace(' ', '_', $strListName));
-        foreach($arrData as $key=>$data)
-        {
-           $exist = $db->query("SELECT * FROM $strTable WHERE $domainColumn LIKE '{$data[$domainColumn]}' AND list_id='$id'")->getRowArray();
-           if(empty($exist))
-           {
-              $data['list_id'] = $id;
-              $db->table($strTable)->insert($data);
-           }
+        foreach ($arrData as $key => $data) {
+            $exist = $db->query("SELECT * FROM $strTable WHERE $domainColumn LIKE '{$data[$domainColumn]}' AND list_id='$id'")->getRowArray();
+            if (empty($exist)) {
+                $data['list_id'] = $id;
+                $db->table($strTable)->insert($data);
+            }
         }
         return true;
     }
@@ -62,14 +79,14 @@ class Lists extends Model
     public function getColumns($id)
     {
         $db = db_connect();
-        $arr = $db->query( "SELECT 
+        $arr = $db->query("SELECT 
         list_template_details.column_name
         FROM lists LEFT OUTER JOIN list_template_details 
         ON list_template_details.template_id = lists.list_template_id WHERE lists.id='$id'")
-        ->getResult();
+            ->getResult();
         $arrReturn = [];
         $arrReturn[] = 'id';
-      
+
         foreach ($arr as $ar) {
             $arrReturn[] = $ar->column_name;
         }
@@ -98,7 +115,7 @@ class Lists extends Model
     {
         $con = db_connect();
         $arr = $con->query("SELECT list_templates.domain_column FROM list_templates LEFT OUTER JOIN lists ON lists.list_template_id = list_templates.id WHERE lists.id='$nListId'")
-        ->getResult();
+            ->getResult();
         return $arr[0]->domain_column;
     }
 

@@ -16,6 +16,24 @@ class Templates extends BaseController
         return view('templates/index');
     } 
 
+    public function addNDomainsColumns($arrColumns,$domainColumn)
+    {
+        $newColumns = [];
+
+        foreach($arrColumns as $column)
+        {
+            $newColumns[]= $column;
+            if($column == $domainColumn)
+            {
+                $newColumns[] = "normalized_domain";
+                $newColumns[] = "normalized_domain1";
+            }
+        }
+
+        return $newColumns;
+
+    }
+
     public function save()
     {
         $params = $this->request->getPost();
@@ -32,6 +50,7 @@ class Templates extends BaseController
         $columns = $excelHelper->headings();
         $contactColumns = $this->db->ListTemplates->addContactsColumns();
         $columns = array_merge($columns,$contactColumns);
+        $columns = $this->addNDomainsColumns($columns,$arr['domain_column']);
         $columns = array_unique($columns);
 
         foreach ($columns as $col) {
