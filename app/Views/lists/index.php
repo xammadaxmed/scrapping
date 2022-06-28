@@ -72,6 +72,11 @@
                         </div>
 
                         <div class="col-sm-12 form-group">
+                            <label for="txtDomain">Domain Column</label>
+                            <input type="text" name="txtDomain" id="txtDomain" class="form-control form-control-sm">
+                        </div>
+
+                        <div class="col-sm-12 form-group">
                             <hr>
                             <a href="#" class="btn btn-primary btn-sm btn-tab btn-danger" data-show="#fuContainer" data-hide="#linkIdContainer">File</a>
                             <a href="#" class="btn btn-primary btn-sm btn-tab" data-show="#linkIdContainer" data-hide="#fuContainer">Source Id</a> 
