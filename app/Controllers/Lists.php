@@ -12,6 +12,8 @@ use App\Libraries\DeBounce\Bouncer;
 use App\Libraries\Kendo\Scrapper as KendoScrapper;
 use Exception;
 use Hermawan\DataTables\DataTable;
+use App\Controllers\Templates;
+use Ozdemir\Datatables\DB\Codeigniter4Adapter;
 
 class Lists extends BaseController
 {
@@ -49,11 +51,32 @@ class Lists extends BaseController
             $arrParams = $this->request->getPost();
             $arr = [];
             $arr['name'] = $arrParams['txtName'];
+            //check if list name is empty
+            if(empty($arr['name']))
+                return $this->error("Please provide list name");
+            //check if list is already exists
+            $results = db_connect()->table('lists')
+                ->where('name', $arr['name'])
+                ->get()->getResult();
+            if(count($results) > 0)
+                return $this->error("List is already exist with this name.");
+
             $arr['list_template_id'] = $arrParams['ddListTemplate'];
+            $arr['txtDomain'] = $arrParams['txtDomain'];
+            $file = $this->request->getFile('fuDomainList');
+            
+
+            if(empty($arr['txtDomain']) && empty($arr['list_template_id']) || !empty($arr['txtDomain']) && !empty($arr['list_template_id']))
+                return $this->error("Please select template or provide domain name");
+
+            if(!empty($arr['txtDomain']) && empty($arr['list_template_id']))
+               $arr['list_template_id'] = $this->createTemplate($arr['name'], $arr['txtDomain'], $file);
+
+            //dd($arr['list_template_id']);die;
             $arr['created_at'] = DateTime::now();
             $this->db->Lists->save($arr);
             $id = $this->db->Lists->getInsertID();
-            $file = $this->request->getFile('fuDomainList');
+            //$file = $this->request->getFile('fuDomainList');
             $fileName = $file->getTempName();
             $excelHelper = ExcelHelper::create($fileName);
             $body = $excelHelper->body();
@@ -229,6 +252,7 @@ class Lists extends BaseController
                     $count++;
                 }
             } catch (Exception $ex) {
+
             }
         }
     }
@@ -247,13 +271,9 @@ class Lists extends BaseController
                 $domain = $data[$domainColumn];
                 $arr = Convert::intArrtoString($arr);
                 $up = $db->table($strTable)->like('website', $domain)->update($arr);
-                dd($up);
-                die;
             } catch (Exception $ex) {
             }
-            die;
         }
-        die;
     }
 
     public function addNewColumns($strTable, $payload, $listId)
@@ -387,7 +407,99 @@ class Lists extends BaseController
         return $bEmpty;
     }
 
+    public function upload()
+    {
+        try {
+            $params = $this->request->getPost();
+            $arr = [];
+            $id = $params['txtId'];
+            $file = $this->request->getFile('fuUploadMore');
+            $fileName = $file->getTempName();
+            $excelHelper = ExcelHelper::create($fileName);
+            $body = $excelHelper->body();
+            $headers = $excelHelper->headings();
+            $db_columns =  $this->db->Lists->getColumns($id);
+            if($db_columns[0] == "id")
+            {
+                unset($db_columns[0]);
+            }
+            $templateName =  $this->db->Lists->getTemplateName($id);
+            $data = Convert::toMappedColumns($body, $db_columns);
+            $data = $this->db->Lists->saveListRecords($id, $templateName, $db_columns, $data);
+            return $this->success("List has been uploaded successfully", [$data]);
+        } catch (Exception $ex) {
+            return $this->error($ex->getMessage());
+        }
+    }
+
     public function test_api()
     {
+        $domains = ['google.com','yahoo.com','youtube.com'];
+        $arr = [];
+        foreach($domains as $domain)
+        { 
+            $arr[] =  KendoScrapper::init()->search($domain)->company();
+
+        }
+
+       echo "Enriched\n";
+
+    }
+
+    public function createTemplate($name, $domainName, $file)
+    {
+        //print_r('THis is just for test');die;
+        
+        //$params = $this->request->getPost();
+        $arr = [];
+        $arr['name'] = trim('template_'.$name);
+        $arr['domain_column'] = trim($domainName);
+        $arr['created_at'] = date('Y-m-d H:i:s');
+        $this->db->ListTemplates->save($arr);
+        $id = $this->db->ListTemplates->getInsertID();
+
+        //$file = $this->request->getFile('fuTemplate');
+
+        $fileName = $file->getTempName();
+        //$excelHelper = new ExcelHelper($fileName);
+        $excelHelper = ExcelHelper::create($fileName);
+        $columns = $excelHelper->headings();
+        //dd('I am in createTemplate');die;
+        $contactColumns = $this->db->ListTemplates->addContactsColumns();
+        $columns = array_merge($columns,$contactColumns);
+        $columns = $this->addNDomainsColumns($columns,$arr['domain_column']);
+        $columns = array_unique($columns);
+
+        foreach ($columns as $col) {
+            if(empty($col))
+                continue;
+            $this->db->ListTemplateDetails->save([
+                'column_name' => trim($col),
+                'template_id' => $id
+            ]);
+        }
+        $strTable = strtolower(str_replace(' ', '_', $arr['name']));
+        $data = TableHelper::createTable($strTable, $columns);
+        
+        return $id;
+        //return $this->success('Template has been created',[ $data]);
+    }
+
+    public function addNDomainsColumns($arrColumns,$domainColumn)
+    {
+        $newColumns = [];
+
+        foreach($arrColumns as $column)
+        {
+            $newColumns[]= $column;
+            if($column == $domainColumn)
+            {
+                $newColumns[] = "normalized_domain";
+                $newColumns[] = "normalized_domain1";
+            }
+        }
+
+        return $newColumns;
+
     }
 }
